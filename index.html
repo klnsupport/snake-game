@@ -20,7 +20,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             width: 100%;
             height: 100%;
             padding: 10px;
@@ -30,35 +30,46 @@
         #gameCanvas {
             background: #FFFFFF;
             max-width: 100%;
-            max-height: 80vh; /* 保留一些空間給計分板和按鈕 */
+            max-height: 70vh; /* 調整高度以容納更多按鈕 */
             touch-action: none;
         }
 
         #scoreBoard {
             color: #5C5B57;
-            font-size: clamp(14px, 4vw, 16px); /* 響應式字體大小 */
+            font-size: clamp(14px, 4vw, 16px);
             font-weight: 300;
         }
 
-        #restartBtn {
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
             background: transparent;
-            color: #A33F3F;
             border: none;
             font-size: clamp(12px, 3.5vw, 14px);
-            padding: 8px;
+            padding: 6px;
             cursor: pointer;
         }
 
-        #restartBtn:hover {
-            color: #8C3434;
-        }
+        #restartBtn { color: #A33F3F; }
+        #restartBtn:hover { color: #8C3434; }
+        #increaseDifficulty { color: #4CAF50; }
+        #increaseDifficulty:hover { color: #45a049; }
+        #decreaseDifficulty { color: #2196F3; }
+        #decreaseDifficulty:hover { color: #1e87db; }
     </style>
 </head>
 <body>
     <div id="gameContainer">
-        <div id="scoreBoard">得分: 0</div>
+        <div id="scoreBoard">得分: 0 - 難度: 中</div>
         <canvas id="gameCanvas"></canvas>
-        <button id="restartBtn">重新開始</button>
+        <div class="button-group">
+            <button id="increaseDifficulty">加難度</button>
+            <button id="decreaseDifficulty">減難度</button>
+            <button id="restartBtn">重新開始</button>
+        </div>
     </div>
 
     <script>
@@ -66,12 +77,13 @@
         const ctx = canvas.getContext('2d');
         const scoreBoard = document.getElementById('scoreBoard');
         const restartBtn = document.getElementById('restartBtn');
+        const increaseDifficultyBtn = document.getElementById('increaseDifficulty');
+        const decreaseDifficultyBtn = document.getElementById('decreaseDifficulty');
 
-        // 動態設置畫布大小
         const gridSize = 24;
         function resizeCanvas() {
-            const maxWidth = window.innerWidth - 20; // 留邊距
-            const maxHeight = window.innerHeight * 0.8 - 20; // 80%高度減去邊距
+            const maxWidth = window.innerWidth - 20;
+            const maxHeight = window.innerHeight * 0.7 - 20;
             const tileCountX = Math.floor(maxWidth / gridSize);
             const tileCountY = Math.floor(maxHeight / gridSize);
             
@@ -86,7 +98,7 @@
             const sizes = resizeCanvas();
             tileCountX = sizes.tileCountX;
             tileCountY = sizes.tileCountY;
-            restartGame(); // 調整大小時重置遊戲
+            restartGame();
         });
 
         let snake = [{ x: Math.floor(tileCountX / 2), y: Math.floor(tileCountY / 2) }];
@@ -96,6 +108,9 @@
         let score = 0;
         let gameInterval = null;
         let isGameRunning = false;
+        let baseSpeed = 100; // 基礎速度（毫秒）
+        let difficultyLevel = 2; // 初始難度等級（0-4）
+        const difficultyLabels = ['極易', '簡單', '中等', '困難', '極難'];
 
         let touchStartX = 0;
         let touchStartY = 0;
@@ -104,6 +119,8 @@
         canvas.addEventListener('touchstart', handleTouchStart);
         canvas.addEventListener('touchmove', handleTouchMove);
         restartBtn.addEventListener('click', restartGame);
+        increaseDifficultyBtn.addEventListener('click', increaseDifficulty);
+        decreaseDifficultyBtn.addEventListener('click', decreaseDifficulty);
 
         function handleKeyPress(event) {
             event.preventDefault();
@@ -155,11 +172,39 @@
             touchStartY = touch.clientY;
         }
 
+        function updateSpeed() {
+            const speed = baseSpeed - (difficultyLevel * 25); // 每級難度減少25ms
+            if (isGameRunning) {
+                clearInterval(gameInterval);
+                gameInterval = setInterval(gameLoop, speed);
+            }
+            updateScoreBoard();
+        }
+
+        function increaseDifficulty() {
+            if (difficultyLevel < 4) {
+                difficultyLevel++;
+                updateSpeed();
+            }
+        }
+
+        function decreaseDifficulty() {
+            if (difficultyLevel > 0) {
+                difficultyLevel--;
+                updateSpeed();
+            }
+        }
+
+        function updateScoreBoard() {
+            scoreBoard.textContent = `得分: ${score} - 難度: ${difficultyLabels[difficultyLevel]}`;
+        }
+
         function startGame() {
             if (isGameRunning) return;
             isGameRunning = true;
             if (gameInterval) clearInterval(gameInterval);
-            gameInterval = setInterval(gameLoop, 100);
+            const speed = baseSpeed - (difficultyLevel * 25);
+            gameInterval = setInterval(gameLoop, speed);
         }
 
         function gameLoop() {
@@ -179,7 +224,7 @@
 
             if (head.x === food.x && head.y === food.y) {
                 score += 1;
-                scoreBoard.textContent = `得分: ${score}`;
+                updateScoreBoard();
                 food = generateFoodPosition();
             } else {
                 snake.pop();
@@ -239,11 +284,12 @@
             dx = 0;
             dy = 0;
             score = 0;
-            scoreBoard.textContent = `得分: ${score}`;
             isGameRunning = false;
+            updateScoreBoard();
             draw();
         }
 
+        updateScoreBoard();
         draw();
     </script>
 </body>
