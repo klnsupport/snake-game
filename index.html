@@ -20,15 +20,17 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
-            max-width: 100vw;
-            max-height: 100vh;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         #gameCanvas {
             background: #FFFFFF;
-            width: 336px;
-            height: 576px;
+            max-width: 100%;
+            max-height: 80vh; /* 留空間給計分板和按鈕 */
             touch-action: none;
         }
 
@@ -55,7 +57,7 @@
 <body>
     <div id="gameContainer">
         <div id="scoreBoard">得分: 0</div>
-        <canvas id="gameCanvas" width="336" height="576"></canvas>
+        <canvas id="gameCanvas"></canvas>
         <button id="restartBtn">重新開始</button>
     </div>
 
@@ -66,8 +68,25 @@
         const restartBtn = document.getElementById('restartBtn');
 
         const gridSize = 24;
-        const tileCountX = Math.floor(canvas.width / gridSize); // 14
-        const tileCountY = Math.floor(canvas.height / gridSize); // 24
+        function resizeCanvas() {
+            const maxWidth = window.innerWidth - 20; // 留邊距
+            const maxHeight = window.innerHeight * 0.8 - 20; // 80%高度減去邊距
+            const tileCountX = Math.floor(maxWidth / gridSize);
+            const tileCountY = Math.floor(maxHeight / gridSize);
+            
+            canvas.width = tileCountX * gridSize;
+            canvas.height = tileCountY * gridSize;
+            
+            return { tileCountX, tileCountY };
+        }
+
+        let { tileCountX, tileCountY } = resizeCanvas();
+        window.addEventListener('resize', () => {
+            const sizes = resizeCanvas();
+            tileCountX = sizes.tileCountX;
+            tileCountY = sizes.tileCountY;
+            restartGame(); // 調整大小時重置遊戲
+        });
 
         let snake = [{ x: Math.floor(tileCountX / 2), y: Math.floor(tileCountY / 2) }];
         let food = generateFoodPosition();
@@ -139,7 +158,7 @@
             if (isGameRunning) return;
             isGameRunning = true;
             if (gameInterval) clearInterval(gameInterval);
-            gameInterval = setInterval(gameLoop, 150); // 保持降低難度的150ms
+            gameInterval = setInterval(gameLoop, 150); // 降低難度
         }
 
         function gameLoop() {
@@ -191,11 +210,9 @@
         }
 
         function draw() {
-            // 清空畫布
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 畫蛇
             snake.forEach((segment, index) => {
                 ctx.fillStyle = index === 0 ? '#8A8780' : '#A7A49D';
                 ctx.fillRect(
@@ -206,7 +223,6 @@
                 );
             });
 
-            // 畫食物
             ctx.fillStyle = '#A33F3F';
             ctx.fillRect(
                 food.x * gridSize,
@@ -227,7 +243,6 @@
             draw();
         }
 
-        // 初始繪製
         draw();
     </script>
 </body>
