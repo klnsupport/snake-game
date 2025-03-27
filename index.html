@@ -26,6 +26,7 @@
             background: #FFFFFF;
             width: 360px;
             height: 600px;
+            touch-action: none; /* 防止觸控時的默認行為 */
         }
 
         #scoreBoard {
@@ -34,17 +35,7 @@
             font-weight: 300;
         }
 
-        #controls {
-            display: grid;
-            grid-template-areas: 
-                "up up"
-                "left right"
-                "restart restart";
-            gap: 10px;
-            width: 200px;
-        }
-
-        button {
+        #restartBtn {
             background: transparent;
             color: #A33F3F;
             border: none;
@@ -53,38 +44,25 @@
             cursor: pointer;
         }
 
-        button:hover {
+        #restartBtn:hover {
             color: #8C3434;
         }
-
-        #upBtn { grid-area: up; }
-        #leftBtn { grid-area: left; }
-        #rightBtn { grid-area: right; }
-        #restartBtn { grid-area: restart; }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <div id="scoreBoard">得分: 0</div>
         <canvas id="gameCanvas" width="360" height="600"></canvas>
-        <div id="controls">
-            <button id="upBtn">↑</button>
-            <button id="leftBtn">←</button>
-            <button id="rightBtn">→</button>
-            <button id="restartBtn">重新開始</button>
-        </div>
+        <button id="restartBtn">重新開始</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreBoard = document.getElementById('scoreBoard');
-        const upBtn = document.getElementById('upBtn');
-        const leftBtn = document.getElementById('leftBtn');
-        const rightBtn = document.getElementById('rightBtn');
         const restartBtn = document.getElementById('restartBtn');
 
-        const gridSize = 24; // 適配手機尺寸
+        const gridSize = 24;
         const tileCountX = canvas.width / gridSize;
         const tileCountY = canvas.height / gridSize;
 
@@ -96,10 +74,66 @@
         let gameInterval = null;
         let isGameRunning = false;
 
-        upBtn.addEventListener('click', () => changeDirection(0, -1));
-        leftBtn.addEventListener('click', () => changeDirection(-1, 0));
-        rightBtn.addEventListener('click', () => changeDirection(1, 0));
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        // 鍵盤事件
+        document.addEventListener('keydown', handleKeyPress);
+        // 觸控事件
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+        // 按鈕事件
         restartBtn.addEventListener('click', restartGame);
+
+        function handleKeyPress(event) {
+            event.preventDefault();
+            const LEFT = 37;
+            const UP = 38;
+            const RIGHT = 39;
+            const DOWN = 40;
+            const SPACE = 32;
+
+            switch (event.keyCode) {
+                case LEFT: if (dx !== 1) { dx = -1; dy = 0; } break;
+                case UP: if (dy !== 1) { dx = 0; dy = -1; } break;
+                case RIGHT: if (dx !== -1) { dx = 1; dy = 0; } break;
+                case DOWN: if (dy !== -1) { dx = 0; dy = 1; } break;
+                case SPACE: restartGame(); return;
+            }
+
+            if (!isGameRunning && (dx !== 0 || dy !== 0)) {
+                startGame();
+            }
+        }
+
+        function handleTouchStart(event) {
+            event.preventDefault();
+            const touch = event.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
+
+        function handleTouchMove(event) {
+            event.preventDefault();
+            const touch = event.touches[0];
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
+
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 20) {
+                if (deltaX > 0 && dx !== -1) { dx = 1; dy = 0; } // 右滑
+                else if (deltaX < 0 && dx !== 1) { dx = -1; dy = 0; } // 左滑
+            } else if (Math.abs(deltaY) > 20) {
+                if (deltaY > 0 && dy !== -1) { dx = 0; dy = 1; } // 下滑
+                else if (deltaY < 0 && dy !== 1) { dx = 0; dy = -1; } // 上滑
+            }
+
+            if (!isGameRunning && (dx !== 0 || dy !== 0)) {
+                startGame();
+            }
+
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
 
         function startGame() {
             if (isGameRunning) return;
@@ -177,15 +211,6 @@
                 gridSize - 4,
                 gridSize - 4
             );
-        }
-
-        function changeDirection(newDx, newDy) {
-            if (newDx === -dx || newDy === -dy) return; // 防止反向
-            dx = newDx;
-            dy = newDy;
-            if (!isGameRunning && (dx !== 0 || dy !== 0)) {
-                startGame();
-            }
         }
 
         function restartGame() {
