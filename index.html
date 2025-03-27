@@ -5,33 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
+            margin: 0;
+            padding: 0;
+            background: #F7F6F2;
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: #F7F6F2;
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            overflow: hidden;
         }
 
         #gameContainer {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 12px; /* 減小間距 */
+            max-width: 100vw; /* 限制寬度不超出螢幕 */
+            max-height: 100vh; /* 限制高度不超出螢幕 */
         }
 
         #gameCanvas {
             background: #FFFFFF;
-            width: 360px;
-            height: 600px;
+            width: 336px; /* 稍微減小寬度，適配手機 */
+            height: 576px; /* 稍微減小高度，留出空間 */
             touch-action: none;
         }
 
         #scoreBoard {
             color: #5C5B57;
-            font-size: 18px;
+            font-size: 16px; /* 減小字體 */
             font-weight: 300;
         }
 
@@ -39,8 +42,8 @@
             background: transparent;
             color: #A33F3F;
             border: none;
-            font-size: 16px;
-            padding: 10px;
+            font-size: 14px; /* 減小字體 */
+            padding: 8px; /* 減小內邊距 */
             cursor: pointer;
         }
 
@@ -52,7 +55,7 @@
 <body>
     <div id="gameContainer">
         <div id="scoreBoard">得分: 0</div>
-        <canvas id="gameCanvas" width="360" height="600"></canvas>
+        <canvas id="gameCanvas" width="336" height="576"></canvas>
         <button id="restartBtn">重新開始</button>
     </div>
 
@@ -63,10 +66,10 @@
         const restartBtn = document.getElementById('restartBtn');
 
         const gridSize = 24;
-        const tileCountX = Math.floor(canvas.width / gridSize); // 15
-        const tileCountY = Math.floor(canvas.height / gridSize); // 25
+        const tileCountX = Math.floor(canvas.width / gridSize); // 14
+        const tileCountY = Math.floor(canvas.height / gridSize); // 24
 
-        let snake = [{ x: Math.floor(tileCountX / 2), y: Math.floor(tileCountY / 2) }]; // 置中
+        let snake = [{ x: Math.floor(tileCountX / 2), y: Math.floor(tileCountY / 2) }];
         let food = generateFoodPosition();
         let dx = 0;
         let dy = 0;
@@ -94,7 +97,7 @@
                 case LEFT: if (dx !== 1) { dx = -1; dy = 0; } break;
                 case UP: if (dy !== 1) { dx = 0; dy = -1; } break;
                 case RIGHT: if (dx !== -1) { dx = 1; dy = 0; } break;
-                case DOWN: if (dy !== -1) { dx = enseguida0; dy = 1; } break;
+                case DOWN: if (dy !== -1) { dx = 0; dy = 1; } break;
                 case SPACE: restartGame(); return;
             }
 
@@ -196,7 +199,7 @@
                 ctx.fillRect(
                     segment.x * gridSize,
                     segment.y * gridSize,
-                    gridSize - 2, // 稍微減小邊距，確保可見
+                    gridSize - 2,
                     gridSize - 2
                 );
             });
