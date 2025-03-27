@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>貪食蛇</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
             display: flex;
@@ -11,79 +12,94 @@
             margin: 0;
             background: #F7F6F2;
             font-family: 'Helvetica', 'Arial', sans-serif;
+            overflow: hidden;
         }
 
         #gameContainer {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 24px;
+            gap: 16px;
         }
 
         #gameCanvas {
             background: #FFFFFF;
+            width: 360px;
+            height: 600px;
         }
 
         #scoreBoard {
             color: #5C5B57;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 300;
         }
 
         #controls {
             display: grid;
             grid-template-areas: 
-                ". up ."
-                "left down right";
+                "up up"
+                "left right"
+                "restart restart";
             gap: 10px;
+            width: 200px;
         }
 
         button {
-            padding: 10px;
-            font-size: 14px;
             background: transparent;
             color: #A33F3F;
             border: none;
+            font-size: 16px;
+            padding: 10px;
             cursor: pointer;
         }
 
         button:hover {
             color: #8C3434;
         }
+
+        #upBtn { grid-area: up; }
+        #leftBtn { grid-area: left; }
+        #rightBtn { grid-area: right; }
+        #restartBtn { grid-area: restart; }
     </style>
 </head>
 <body>
     <div id="gameContainer">
-        <div id="scoreBoard">得分: 0 | 上一個數字: -</div>
-        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div id="scoreBoard">得分: 0</div>
+        <canvas id="gameCanvas" width="360" height="600"></canvas>
         <div id="controls">
-            <button style="grid-area: up" onclick="changeDirection({keyCode: 38})">↑</button>
-            <button style="grid-area: left" onclick="changeDirection({keyCode: 37})">←</button>
-            <button style="grid-area: down" onclick="changeDirection({keyCode: 40})">↓</button>
-            <button style="grid-area: right" onclick="changeDirection({keyCode: 39})">→</button>
+            <button id="upBtn">↑</button>
+            <button id="leftBtn">←</button>
+            <button id="rightBtn">→</button>
+            <button id="restartBtn">重新開始</button>
         </div>
-        <button onclick="restartGame()">重新開始</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreBoard = document.getElementById('scoreBoard');
+        const upBtn = document.getElementById('upBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const restartBtn = document.getElementById('restartBtn');
 
-        const gridSize = 20;
-        const tileCount = canvas.width / gridSize;
+        const gridSize = 24; // 適配手機尺寸
+        const tileCountX = canvas.width / gridSize;
+        const tileCountY = canvas.height / gridSize;
 
-        let snake = [{ x: 10, y: 10 }];
+        let snake = [{ x: 8, y: 12 }];
         let food = generateFoodPosition();
         let dx = 0;
         let dy = 0;
         let score = 0;
         let gameInterval = null;
         let isGameRunning = false;
-        let lastFoodNumber = null;
-        let currentInput = null;
 
-        document.addEventListener('keydown', handleKeyPress);
+        upBtn.addEventListener('click', () => changeDirection(0, -1));
+        leftBtn.addEventListener('click', () => changeDirection(-1, 0));
+        rightBtn.addEventListener('click', () => changeDirection(1, 0));
+        restartBtn.addEventListener('click', restartGame);
 
         function startGame() {
             if (isGameRunning) return;
@@ -108,16 +124,8 @@
             snake.unshift(head);
 
             if (head.x === food.x && head.y === food.y) {
-                if (lastFoodNumber !== null && currentInput !== lastFoodNumber) {
-                    clearInterval(gameInterval);
-                    isGameRunning = false;
-                    alert(`錯誤！上一個數字是 ${lastFoodNumber}，你輸入的是 ${currentInput === null ? '無' : currentInput}`);
-                    return;
-                }
                 score += 1;
-                scoreBoard.textContent = `得分: ${score} | 上一個數字: ${food.number}`;
-                lastFoodNumber = food.number;
-                currentInput = null;
+                scoreBoard.textContent = `得分: ${score}`;
                 food = generateFoodPosition();
             } else {
                 snake.pop();
@@ -126,7 +134,7 @@
 
         function gameOver() {
             const head = snake[0];
-            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+            if (head.x < 0 || head.x >= tileCountX || head.y < 0 || head.y >= tileCountY) {
                 return true;
             }
             for (let i = 1; i < snake.length; i++) {
@@ -141,9 +149,8 @@
             let newFood;
             do {
                 newFood = {
-                    x: Math.floor(Math.random() * tileCount),
-                    y: Math.floor(Math.random() * tileCount),
-                    number: Math.floor(Math.random() * 10)
+                    x: Math.floor(Math.random() * tileCountX),
+                    y: Math.floor(Math.random() * tileCountY)
                 };
             } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
             return newFood;
@@ -155,63 +162,39 @@
 
             snake.forEach((segment, index) => {
                 ctx.fillStyle = index === 0 ? '#8A8780' : '#A7A49D';
-                ctx.fillRect(segment.x * gridSize + 2, segment.y * gridSize + 2, gridSize - 4, gridSize - 4);
+                ctx.fillRect(
+                    segment.x * gridSize + 2,
+                    segment.y * gridSize + 2,
+                    gridSize - 4,
+                    gridSize - 4
+                );
             });
 
             ctx.fillStyle = '#A33F3F';
-            ctx.fillRect(food.x * gridSize + 2, food.y * gridSize + 2, gridSize - 4, gridSize - 4);
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = '12px Helvetica';
-            ctx.textAlign = 'center';
-            ctx.fillText(food.number, food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2 + 4);
+            ctx.fillRect(
+                food.x * gridSize + 2,
+                food.y * gridSize + 2,
+                gridSize - 4,
+                gridSize - 4
+            );
         }
 
-        function handleKeyPress(event) {
-            event.preventDefault();
-            const LEFT = 37;
-            const UP = 38;
-            const RIGHT = 39;
-            const DOWN = 40;
-            const SPACE = 32;
-            const NUMBER_KEYS = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57];
-
-            if (NUMBER_KEYS.includes(event.keyCode)) {
-                currentInput = event.keyCode - 48;
-                return;
-            }
-
-            changeDirection(event);
-
+        function changeDirection(newDx, newDy) {
+            if (newDx === -dx || newDy === -dy) return; // 防止反向
+            dx = newDx;
+            dy = newDy;
             if (!isGameRunning && (dx !== 0 || dy !== 0)) {
                 startGame();
             }
         }
 
-        function changeDirection(event) {
-            const LEFT = 37;
-            const UP = 38;
-            const RIGHT = 39;
-            const DOWN = 40;
-            const SPACE = 32;
-
-            switch (event.keyCode) {
-                case LEFT: if (dx !== 1) { dx = -1; dy = 0; } break;
-                case UP: if (dy !== 1) { dx = 0; dy = -1; } break;
-                case RIGHT: if (dx !== -1) { dx = 1; dy = 0; } break;
-                case DOWN: if (dy !== -1) { dx = 0; dy = 1; } break;
-                case SPACE: restartGame(); return;
-            }
-        }
-
         function restartGame() {
-            snake = [{ x: 10, y: 10 }];
+            snake = [{ x: 8, y: 12 }];
             food = generateFoodPosition();
             dx = 0;
             dy = 0;
             score = 0;
-            lastFoodNumber = null;
-            currentInput = null;
-            scoreBoard.textContent = `得分: ${score} | 上一個數字: -`;
+            scoreBoard.textContent = `得分: ${score}`;
             isGameRunning = false;
             draw();
         }
